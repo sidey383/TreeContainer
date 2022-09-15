@@ -3,4 +3,4 @@ project(TreeContainer)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(TreeContainer main.cpp)
+add_executable(TreeContainer main.cpp Tree.cpp Tree.h)
