@@ -62,12 +62,12 @@ public:
     class iterator {
     private:
         Node* node;
-
+        bool end = false;
     public:
 
-        iterator(Node* node) : node(node) {}
+        iterator(Node* node) : node(node), end(false) {}
 
-        iterator(Node* node, bool isEnd) : node(node) {
+        iterator(Node* node, bool isEnd) : node(node), end(isEnd)  {
             if(isEnd && node != nullptr) {
                 while(node->left != nullptr || node->right != nullptr) {
                     if(node->left != nullptr)
@@ -89,13 +89,18 @@ public:
         }
 
         bool next() {
+            if(node == nullptr)
+                throw std::range_error("tree is empty");
+            if(end)
+                return !end;
             if(node->left != nullptr) {
                 node = node->left;
-                return true;
+                end = false;
+                return !end;
             }
             if(node->right != nullptr) {
                 node = node->right;
-                return true;
+                return !end;
             }
 
             Node* lastNode = nullptr;
@@ -111,14 +116,17 @@ public:
                     else
                         node = node->left;
                 }
-                return false;
+                end = true;
+                return !end;
             } else {
                 node = node->right;
             }
-            return true;
+            return !end;
         }
 
         bool back() {
+            if(node == nullptr)
+                throw std::range_error("tree is empty");
             if(node->top == nullptr) {
                 return false;
             }
@@ -132,23 +140,45 @@ public:
                     node = node->left;
                 }
             }
+            end = false;
             return true;
         }
 
+        bool isEnd() {
+            return end;
+        }
+
+        void setValue(T value) {
+            node->value = value;
+        }
+
+        void addLeft(T value) {
+            Node* newNode = new Node(value, node, nullptr, node->left);
+            if(newNode->left != nullptr)
+                newNode->left->top = newNode;
+            node->left = newNode;
+        }
+
+        void addRight(T value) {
+            Node* newNode = new Node(value, node, node->right, nullptr);
+            if(newNode->right != nullptr)
+                newNode->right->top = newNode;
+            node->right = newNode;
+        }
+
         bool operator== (iterator const &it){
-            return it.node == this->node;
+            return it.node == this->node && it.end == this->end;
         }
 
         bool operator!= (iterator const &it){
-            return it.node != this->node;
+            return it.node != this->node || it.end != this->end;
         }
 
         iterator& operator++ (){
-            if(this->next()) {
-                return *this;
-            } else {
+            if(isEnd())
                 throw std::out_of_range("out of range");
-            }
+            next();
+            return *this;
         }
 
         iterator& operator-- (){
