@@ -61,21 +61,21 @@ private:
 public:
     class iterator {
     private:
-        Node* node;
+        Node* node = nullptr;
         bool end = false;
     public:
 
-        iterator(Node* node) : node(node), end(false) {}
-
-        iterator(Node* node, bool isEnd) : node(node), end(isEnd)  {
+        iterator(Node* node, bool isEnd = false)  {
             if(isEnd && node != nullptr) {
                 while(node->left != nullptr || node->right != nullptr) {
-                    if(node->left != nullptr)
-                        node = node->left;
-                    else
+                    if(node->right != nullptr)
                         node = node->right;
+                    else
+                        node = node->left;
                 }
             }
+            this->node = node;
+            this->end = isEnd;
         }
 
         iterator(iterator const& it) {
@@ -109,7 +109,7 @@ public:
                 node = node->top;
             }
 
-            if(node->top == nullptr) {
+            if(node->right == nullptr || node->right == lastNode) {
                 while(node->left != nullptr || node->right != nullptr) {
                     if(node->right != nullptr)
                         node = node->right;
@@ -134,7 +134,7 @@ public:
             node = node->top;
             while((node->left != nullptr && node->left != lastNode) || (node->right != nullptr && node->right != lastNode && node->left != lastNode)) {
                 lastNode = node;
-                if(node->right != nullptr && node->right != lastNode && node->left != lastNode) {
+                if(node->right != nullptr && node->right != lastNode) {
                     node = node->right;
                 } else {
                     node = node->left;
@@ -184,6 +184,23 @@ public:
         iterator& operator-- (){
             if(this->back()) {
                 return *this;
+            } else {
+                throw std::out_of_range("out of range");
+            }
+        }
+
+        iterator operator++ (int){
+            if(isEnd())
+                throw std::out_of_range("out of range");
+            iterator it = iterator(this);
+            next();
+            return it;
+        }
+
+        iterator operator-- (int){
+            iterator it = iterator(this);
+            if(this->back()) {
+                return it;
             } else {
                 throw std::out_of_range("out of range");
             }

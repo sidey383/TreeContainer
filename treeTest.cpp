@@ -24,7 +24,7 @@ TEST(BasicTest, ForCycleTest) {
     EXPECT_EQ(size, 1);
 }
 
-TEST(GenaralTest, CreateTree) {
+TEST(GenaralTest, Tree1) {
     auto it = general_tree.begin();
     it.addLeft(2);
     it.addRight(9);
@@ -72,12 +72,26 @@ TEST(GenaralTest, CreateTree) {
     EXPECT_EQ(it.isEnd(), false);
     it.addLeft(13);
     it.addRight(14);
-}
-
-TEST(GenaralTest, IteratorTest) {
     int size = 0;
     for(auto iterator = general_tree.begin(); iterator != general_tree.end(); ++iterator) {
         size++;
-        EXPECT_EQ(iterator.getValue(), size) << "Wrong value in tree";
+        EXPECT_EQ(iterator.getValue(), size) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
+        EXPECT_EQ(it.getValue(), *it);
+    }
+    it = general_tree.begin();
+    size = 0;
+    while(true) {
+        size++;
+        EXPECT_EQ(it.getValue(), size) << "iterator node: " << *it << " isEnd: " << it.isEnd() << std::endl;
+        EXPECT_NO_THROW(++it);
+        if(it == general_tree.end())
+            break;
+        EXPECT_EQ(it.getValue(), size+1) << "iterator node: " << *it << " isEnd: " << it.isEnd() << std::endl;
+        EXPECT_NO_THROW(--it);
+        EXPECT_EQ(it.getValue(), size) << "iterator node: " << *it << " isEnd: " << it.isEnd() << std::endl;
+        EXPECT_NO_THROW(++it);
+        EXPECT_EQ(it.getValue(), size+1) << "iterator node: " << *it << " isEnd: " << it.isEnd() << std::endl;
+        if(size >= 15)
+            FAIL();
     }
 }
