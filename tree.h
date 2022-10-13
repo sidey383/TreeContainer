@@ -26,7 +26,7 @@ public:
         return iterator(tree, true);
     }
 
-    bool operator[] (const int a) {
+    int operator[] (const int a) {
         iterator it = begin();
         for(int i = 0; i < a; i++) {
             if(!it.next()) {
@@ -34,7 +34,6 @@ public:
             }
         }
         return it.getValue();
-
     }
 
 private:
@@ -54,8 +53,9 @@ private:
     void clear(Node* node) {
         if(node == nullptr)
             return;
-        free(node->right);
-        free(node->left);
+        clear(node->right);
+        clear(node->left);
+        delete node;
     }
 
 public:
@@ -63,9 +63,15 @@ public:
     private:
         Node* node = nullptr;
         bool end = false;
+
     public:
 
-        iterator(Node* node, bool isEnd = false)  {
+        iterator() {
+            node = nullptr;
+            end = true;
+        }
+
+        explicit iterator(Node* node, bool isEnd = false)  {
             if(isEnd && node != nullptr) {
                 while(node->left != nullptr || node->right != nullptr) {
                     if(node->right != nullptr)
@@ -80,6 +86,12 @@ public:
 
         iterator(iterator const& it) {
             this->node = it.node;
+            this->end = it.end;
+        }
+
+        iterator(iterator const * const it) {
+            this->node = it->node;
+            this->end = it->end;
         }
 
         T getValue() {
@@ -127,20 +139,47 @@ public:
         bool back() {
             if(node == nullptr)
                 throw std::range_error("tree is empty");
+            if(isEnd()) {
+                end = false;
+                return true;
+            }
             if(node->top == nullptr) {
-                return false;
+                while(true) {
+                    if(node->right != nullptr) {
+                        node = node->right;
+                    } else {
+                        if (node->left != nullptr) {
+                            node = node->left;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                return true;
+            }
+            if(node->top->left == node) {
+                node = node->top;
+                return true;
+            }
+            if(node->top->right == node && node->top->left == nullptr) {
+                node = node->top;
+                return true;
             }
             Node* lastNode = node;
             node = node->top;
-            while((node->left != nullptr && node->left != lastNode) || (node->right != nullptr && node->right != lastNode && node->left != lastNode)) {
-                lastNode = node;
+            while(true) {
                 if(node->right != nullptr && node->right != lastNode) {
+                    lastNode = node;
                     node = node->right;
                 } else {
-                    node = node->left;
+                    if (node->left != nullptr && node->left != lastNode) {
+                        lastNode = node;
+                        node = node->left;
+                    } else {
+                        break;
+                    }
                 }
             }
-            end = false;
             return true;
         }
 
@@ -192,13 +231,13 @@ public:
         iterator operator++ (int){
             if(isEnd())
                 throw std::out_of_range("out of range");
-            iterator it = iterator(this);
+            iterator it(this);
             next();
             return it;
         }
 
         iterator operator-- (int){
-            iterator it = iterator(this);
+            iterator it(this);
             if(this->back()) {
                 return it;
             } else {
