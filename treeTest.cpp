@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <crtdbg.h>
 #include "tree.h"
 
 class MemoryLeakDetector {
@@ -281,4 +282,20 @@ TEST_F(GeneralTest1, PostfixOperatorsTest) {
         EXPECT_EQ(iterator.isEnd(), false);
         i--;
     }
+}
+
+class VoidTreeTest : public TestWithMemoryLeakDetector {
+protected:
+
+    Tree<int> tree = Tree<int>();
+};
+
+TEST_F(VoidTreeTest, IteratorExceptions) {
+    auto iter = tree.begin();
+    EXPECT_ANY_THROW(iter.getValue());
+    EXPECT_ANY_THROW(*iter);
+    EXPECT_ANY_THROW(iter++);
+    EXPECT_ANY_THROW(iter--);
+    EXPECT_ANY_THROW(++iter);
+    EXPECT_ANY_THROW(--iter);
 }
