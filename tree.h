@@ -1,6 +1,4 @@
 #pragma once
-#include <stack>
-#include <stdexcept>
 
 template<class T>
 class Tree {
@@ -12,7 +10,7 @@ public:
         clear(tree);
     }
 
-    Tree(T value) {
+    explicit Tree(T value) {
         tree = new Node(value);
     }
 
@@ -25,11 +23,12 @@ public:
     }
 
     int operator[] (const int a) {
-        iterator it = begin();
+        iterator it = iterator(tree); //  iterator it = begin() ?
         for(int i = 0; i < a; i++) {
-            if(!it.next()) {
-                throw std::out_of_range("out of range");
-            }
+            ++it;
+        }
+        if(it.isEnd()) {
+            throw std::out_of_range("out of range");
         }
         return it.getValue();
     }
@@ -39,7 +38,7 @@ private:
     class Node {
     public:
         Node(T value, Node* top, Node* right, Node* left) : value(value), top(top), right(right), left(left) {}
-        Node(T value) : value(value), top(nullptr), right(nullptr), left(nullptr) {}
+        explicit Node(T value) : value(value), top(nullptr), right(nullptr), left(nullptr) {}
         Node* left;
         Node* right;
         Node* top;
@@ -51,8 +50,8 @@ private:
     void clear(Node* node) {
         if(node == nullptr)
             return;
-        clear(node->right);
         clear(node->left);
+        clear(node->right);
         delete node;
     }
 
@@ -65,7 +64,7 @@ public:
     public:
 
         explicit iterator(Node* node, bool isEnd = false)  {
-            if(isEnd && node != nullptr) {
+            if(isEnd) {
                 while(node->left != nullptr || node->right != nullptr) {
                     if(node->right != nullptr)
                         node = node->right;
@@ -82,7 +81,7 @@ public:
             this->end = it.end;
         }
 
-        iterator(iterator const * const it) {
+        explicit iterator(iterator const * const it) {
             this->node = it->node;
             this->end = it->end;
         }
@@ -92,76 +91,64 @@ public:
         }
 
         bool next() {
-            if(end)
+            if(end) // if this is end return false
                 return false;
-            if(node->left != nullptr) {
+            if(node->left != nullptr) { // step into tree
                 node = node->left;
-                end = false;
-                return !end;
+                return true;
             }
             if(node->right != nullptr) {
                 node = node->right;
-                return !end;
+                return true;
             }
 
             Node* lastNode = nullptr;
-            while((node->right == nullptr || node->right == lastNode) && node->top != nullptr) {
+            while((node->right == nullptr || node->right == lastNode) && node->top != nullptr) { // if this hanging vertex step up
                 lastNode = node;
                 node = node->top;
             }
 
-            if(node->right == nullptr || node->right == lastNode) {
-                while(node->left != nullptr || node->right != nullptr) {
+            if(node->right == nullptr || node->right == lastNode) { // if this is ended
+                while(node->left != nullptr || node->right != nullptr) { // go back
                     if(node->right != nullptr)
                         node = node->right;
                     else
                         node = node->left;
                 }
                 end = true;
-                return !end;
+                return true;
             } else {
                 node = node->right;
             }
-            return !end;
+            return true;
         }
 
         bool back() {
-            if (isEnd()) {
+            if (end) {
                 end = false;
                 return true;
             }
 
-            if (node->top == nullptr) {
-                while(true) {
-                    if(node->right != nullptr) {
-                        node = node->right;
-                    } else {
-                        if (node->left != nullptr) {
-                            node = node->left;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                return true;
+            if (node->top == nullptr) { // is begun
+                return false;
             }
 
-            if(node->top->left == node) {
+            if(node->top->left == node) { // if came from left node
                 node = node->top;
                 return true;
             }
-            if(node->top->right == node && node->top->left == nullptr) {
+            if(node->top->left == nullptr) { // if came from right node and not have left node
                 node = node->top;
                 return true;
             }
             Node* lastNode = node;
             node = node->top;
-            while(true) {
-                if(node->right != nullptr && node->right != lastNode) {
+            while(true) { // or go down
+                if(node->right != nullptr && node->right != lastNode) { // if right node exists and not last node
                     lastNode = node;
                     node = node->right;
                 } else {
-                    if (node->left != nullptr && node->left != lastNode) {
+                    if (node->left != nullptr) {
                         lastNode = node;
                         node = node->left;
                     } else {
@@ -203,35 +190,30 @@ public:
         }
 
         iterator& operator++ (){
-            if(isEnd())
+            if(!next())
                 throw std::out_of_range("out of range");
-            next();
             return *this;
         }
 
         iterator& operator-- (){
-            if(this->back()) {
-                return *this;
-            } else {
+            if(!back())
                 throw std::out_of_range("out of range");
-            }
+            return *this;
         }
 
-        iterator operator++ (int){
-            if(isEnd())
-                throw std::out_of_range("out of range");
+        const iterator operator++ (int){
             iterator it(this);
-            next();
+            if(!next())
+                throw std::out_of_range("out of range");
             return it;
+
         }
 
-        iterator operator-- (int){
+        const iterator operator-- (int){
             iterator it(this);
-            if(this->back()) {
-                return it;
-            } else {
+            if(!back())
                 throw std::out_of_range("out of range");
-            }
+            return it;
         }
 
         T operator* (){

@@ -1,73 +1,159 @@
-#include <gtest/gtest.h>
+#define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
+#include <gtest/gtest.h>
 #include "tree.h"
 
-class MemoryLeakDetector {
-public:
-    MemoryLeakDetector() {
-        _CrtMemCheckpoint(&memState_);
-    }
+class TestWithMemoryLeakDetector : public ::testing::Test {
+    public:
+        TestWithMemoryLeakDetector() {
+            _CrtMemCheckpoint(&memState_);
+        }
 
-    ~MemoryLeakDetector() {
-        _CrtMemState stateNow, stateDiff;
-        _CrtMemCheckpoint(&stateNow);
-        int diffResult = _CrtMemDifference(&stateDiff, &memState_, &stateNow);
-        if (diffResult)
-            reportFailure(stateDiff);
-    }
-private:
-    void reportFailure(_CrtMemState stateDiff) {
-        FAIL() << "Memory leak \n"
-        << stateDiff.lSizes[0] << " bytes in " <<stateDiff.lCounts[0] << " Free Blocks." << std::endl
-        << stateDiff.lSizes[1] << " bytes in " <<stateDiff.lCounts[1] << " Normal Blocks." << std::endl
-        << stateDiff.lSizes[2] << " bytes in " <<stateDiff.lCounts[2] << " CRT Blocks." << std::endl
-        << stateDiff.lSizes[3] << " bytes in " <<stateDiff.lCounts[4] << " Ignore Blocks." << std::endl
-        << stateDiff.lSizes[4] << " bytes in " <<stateDiff.lCounts[4] << " Client Blocks." << std::endl
-        << "Largest number used: " << stateDiff.lHighWaterCount << " bytes." << std::endl
-        << "Total allocations: " << stateDiff.lTotalCount << " bytes." << std::endl;
-    }
+        ~TestWithMemoryLeakDetector() {
+            _CrtMemState stateNow, stateDiff;
+            _CrtMemCheckpoint(&stateNow);
+            if (_CrtMemDifference(&stateDiff, &memState_, &stateNow))
+                reportFailure(stateDiff);
+        }
+    private:
+
+        static void reportFailure(_CrtMemState stateDiff) {
+            FAIL() << "Memory leak \n"
+                   << stateDiff.lSizes[0] << " bytes in " <<stateDiff.lCounts[0] << " Free Blocks." << std::endl
+                   << stateDiff.lSizes[1] << " bytes in " <<stateDiff.lCounts[1] << " Normal Blocks." << std::endl
+                   << stateDiff.lSizes[2] << " bytes in " <<stateDiff.lCounts[2] << " CRT Blocks." << std::endl
+                   << stateDiff.lSizes[3] << " bytes in " <<stateDiff.lCounts[4] << " Ignore Blocks." << std::endl
+                   << stateDiff.lSizes[4] << " bytes in " <<stateDiff.lCounts[4] << " Client Blocks." << std::endl
+                   << "Largest number used: " << stateDiff.lHighWaterCount << " bytes." << std::endl
+                   << "Total allocations: " << stateDiff.lTotalCount << " bytes." << std::endl;
+        }
     _CrtMemState memState_;
 };
 
-class TestWithMemoryLeakDetector : public ::testing::Test {
+class DegenerateTreeTest1 : public TestWithMemoryLeakDetector {
 protected:
 
-    MemoryLeakDetector leakDetector;
+    void SetUp() override {
+        auto it = tree.begin();
+        EXPECT_NO_THROW(it.addRight(9));
+        EXPECT_NO_THROW(it.addRight(8));
+        EXPECT_NO_THROW(it.addRight(7));
+        EXPECT_NO_THROW(it.addRight(6));
+        EXPECT_NO_THROW(it.addRight(5));
+        EXPECT_NO_THROW(it.addRight(4));
+        EXPECT_NO_THROW(it.addRight(3));
+        EXPECT_NO_THROW(it.addRight(2));
+    }
 
+    Tree<int> tree = Tree<int>(1);
 };
 
-TEST_F(TestWithMemoryLeakDetector, TreeBuildTest) {
-    Tree<int> tree(1);
+TEST_F(DegenerateTreeTest1, TreeBuildTest) {
     Tree<int>::iterator iterator = tree.begin();
-    EXPECT_NO_THROW(iterator.addRight(2));
-    EXPECT_NO_THROW(iterator.addRight(3));
-    EXPECT_NO_THROW(iterator.addLeft(4));
-    EXPECT_NO_THROW(iterator.addLeft(5));
+    EXPECT_ANY_THROW(--iterator);
     EXPECT_ANY_THROW(iterator--);
     EXPECT_ANY_THROW(
             while (true) {
-                iterator++;
+                ++iterator;
             }
             );
+    EXPECT_ANY_THROW(iterator++);
+    EXPECT_EQ(tree[0], 1);
+    EXPECT_EQ(tree[1], 2);
+    EXPECT_EQ(tree[2], 3);
+    EXPECT_EQ(tree[3], 4);
+    EXPECT_EQ(tree[4], 5);
+    EXPECT_ANY_THROW(tree[9]);
+    EXPECT_ANY_THROW(tree[10]);
+    iterator = tree.end();
+    EXPECT_ANY_THROW(++iterator);
+    EXPECT_ANY_THROW(iterator++);
+    EXPECT_ANY_THROW(
+            while (true) {
+                --iterator;
+            }
+    );
+    EXPECT_ANY_THROW(iterator--);
 }
 
-class BasicTest : public TestWithMemoryLeakDetector {
+class DegenerateTreeTest2 : public TestWithMemoryLeakDetector {
+protected:
+
+    void SetUp() override {
+        auto it = tree.begin();
+        EXPECT_NO_THROW(it.addLeft(9));
+        EXPECT_NO_THROW(it.addLeft(8));
+        EXPECT_NO_THROW(it.addLeft(7));
+        EXPECT_NO_THROW(it.addLeft(6));
+        EXPECT_NO_THROW(it.addLeft(5));
+        EXPECT_NO_THROW(it.addLeft(4));
+        EXPECT_NO_THROW(it.addLeft(3));
+        EXPECT_NO_THROW(it.addLeft(2));
+    }
+
+    Tree<int> tree = Tree<int>(1);
+};
+
+TEST_F(DegenerateTreeTest2, TreeBuildTest) {
+    Tree<int>::iterator iterator = tree.begin();
+    EXPECT_ANY_THROW(--iterator);
+    EXPECT_ANY_THROW(iterator--);
+    EXPECT_ANY_THROW(
+            while (true) {
+                ++iterator;
+            }
+    );
+    EXPECT_ANY_THROW(iterator++);
+    EXPECT_EQ(tree[0], 1);
+    EXPECT_EQ(tree[1], 2);
+    EXPECT_EQ(tree[2], 3);
+    EXPECT_EQ(tree[3], 4);
+    EXPECT_EQ(tree[4], 5);
+    EXPECT_ANY_THROW(tree[9]);
+    EXPECT_ANY_THROW(tree[10]);
+    iterator = tree.end();
+    EXPECT_ANY_THROW(++iterator);
+    EXPECT_ANY_THROW(iterator++);
+    EXPECT_ANY_THROW(
+            while (true) {
+                --iterator;
+            }
+    );
+    EXPECT_ANY_THROW(iterator--);
+}
+
+class OneNodeTest : public TestWithMemoryLeakDetector {
 protected:
 
     Tree<int> tree = Tree<int>(2);
 };
 
-TEST_F(BasicTest, WhileCycleTest) {
+TEST_F(OneNodeTest, ExeptionsTest) {
+    Tree<int>::iterator iterator = tree.begin();
+    EXPECT_ANY_THROW(--iterator);
+    EXPECT_ANY_THROW(iterator--);
+    EXPECT_ANY_THROW(
+            while (true) {
+                ++iterator;
+            }
+    );
+    EXPECT_ANY_THROW(iterator++);
+    EXPECT_NO_THROW(tree[0]);
+    EXPECT_ANY_THROW(tree[1]);
+    EXPECT_ANY_THROW(tree[2]);
+}
+
+TEST_F(OneNodeTest, WhileCycleTest) {
     int size = 0;
     auto iterator = tree.begin();
     do {
         EXPECT_EQ(iterator.getValue(), 2);
         size++;
     } while (iterator.next());
-    EXPECT_EQ(size, 1);
+    EXPECT_EQ(size, 2);
 }
 
-TEST_F(BasicTest, ForCycleTest)  {
+TEST_F(OneNodeTest, ForCycleTest)  {
     int size = 0;
     for(auto iterator = tree.begin(); iterator != tree.end(); ++iterator) {
         EXPECT_EQ(iterator.getValue(), 2) << "Wrong value in tree";
@@ -132,6 +218,21 @@ protected:
     Tree<int> tree = Tree<int>(1);
 };
 
+TEST_F(GeneralTest1, ExeptionsTest) {
+    Tree<int>::iterator iterator = tree.begin();
+    EXPECT_ANY_THROW(--iterator);
+    EXPECT_ANY_THROW(iterator--);
+    EXPECT_ANY_THROW(
+            while (true) {
+                ++iterator;
+            }
+    );
+    EXPECT_ANY_THROW(iterator++);
+    EXPECT_NO_THROW(tree[13]);
+    EXPECT_ANY_THROW(tree[14]);
+    EXPECT_ANY_THROW(tree[15]);
+}
+
 TEST_F(GeneralTest1, ForItearation) {
     int size = 0;
     for(auto iterator = tree.begin(); iterator != tree.end(); ++iterator) {
@@ -142,7 +243,6 @@ TEST_F(GeneralTest1, ForItearation) {
 }
 
 TEST_F(GeneralTest1, ForEachItearation) {
-    MemoryLeakDetector leakDetector;
     int size = 0;
     for(int a : tree) {
         size++;
@@ -152,7 +252,6 @@ TEST_F(GeneralTest1, ForEachItearation) {
 }
 
 TEST_F(GeneralTest1, IndexingTest) {
-    MemoryLeakDetector leakDetector;
     for(int i = 0; i < 14; i++) {
         EXPECT_NO_THROW(tree[i]) << "index: " << i;
         EXPECT_EQ(tree[i], i + 1) << "index: " << i;
@@ -160,7 +259,6 @@ TEST_F(GeneralTest1, IndexingTest) {
 }
 
 TEST_F(GeneralTest1, DecrementTest1) {
-    MemoryLeakDetector leakDetector;
     Tree<int>::iterator iterator = tree.begin();
     int size = 0;
     while(true) {
@@ -180,7 +278,6 @@ TEST_F(GeneralTest1, DecrementTest1) {
 }
 
 TEST_F(GeneralTest1, DecremetTest2){
-    MemoryLeakDetector leakDetector;
     int size = 15;
     auto iterator = tree.end();
     do {
@@ -193,7 +290,6 @@ TEST_F(GeneralTest1, DecremetTest2){
 }
 
 TEST_F(GeneralTest1, ForwardAndBackward){
-    MemoryLeakDetector leakDetector;
     int size = 0;
     Tree<int>::iterator iterator = tree.begin();
     for(; iterator != tree.end(); ++iterator) {
@@ -214,7 +310,6 @@ TEST_F(GeneralTest1, ForwardAndBackward){
 }
 
 TEST_F(GeneralTest1, RotateValueTest1) {
-    MemoryLeakDetector leakDetector;
     int size = 0;
     for(auto it = tree.begin(); it != tree.end(); ++it) {
         size++;
@@ -236,7 +331,6 @@ TEST_F(GeneralTest1, RotateValueTest1) {
 }
 
 TEST_F(GeneralTest1, RotateValueTest2) {
-    MemoryLeakDetector leakDetector;
     auto bIterator = tree.begin();
     auto eIterator = tree.end();
     EXPECT_EQ(eIterator == bIterator, false);
@@ -259,11 +353,9 @@ TEST_F(GeneralTest1, RotateValueTest2) {
     int size = 0;
     auto iterator = tree.end();
     do {
-        EXPECT_NO_THROW(--iterator);
+        EXPECT_NO_THROW(--iterator) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
         size++;
         EXPECT_EQ(iterator.getValue(), size) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
-        if(size < 1)
-            FAIL();
     } while(iterator != tree.begin());
 }
 
@@ -298,18 +390,39 @@ TEST_F(GeneralTest1, PostfixOperatorsTest) {
     }
 }
 
-class VoidTreeTest : public TestWithMemoryLeakDetector {
+class GeneralTest2 : public TestWithMemoryLeakDetector {
 protected:
 
-    Tree<int> tree = Tree<int>();
+    void SetUp() override {
+        auto it = tree.begin();
+        it.addLeft(2);
+        ++it;
+        it.addRight(4);
+        it.addRight(3);
+        --it;
+        it.addRight(6);
+        it.addRight(5);
+
+    }
+
+    Tree<int> tree = Tree<int>(1);
 };
 
-TEST_F(VoidTreeTest, IteratorExceptions) {
-    auto iter = tree.begin();
-    EXPECT_ANY_THROW(iter.getValue());
-    EXPECT_ANY_THROW(*iter);
-    EXPECT_ANY_THROW(iter++);
-    EXPECT_ANY_THROW(iter--);
-    EXPECT_ANY_THROW(++iter);
-    EXPECT_ANY_THROW(--iter);
+TEST_F(GeneralTest2, ForItearation) {
+    int size = 0;
+    for(auto iterator = tree.begin(); iterator != tree.end(); ++iterator) {
+        size++;
+        EXPECT_EQ(iterator.getValue(), size) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
+        EXPECT_EQ(iterator.getValue(), *iterator);
+    }
 }
+
+TEST_F(GeneralTest2, ForItearationReverse) {
+    int size = 7;
+    for(auto iterator = --tree.end(); iterator != tree.begin(); --iterator) {
+        size--;
+        EXPECT_EQ(iterator.getValue(), size) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
+        EXPECT_EQ(iterator.getValue(), *iterator);
+    }
+}
+
