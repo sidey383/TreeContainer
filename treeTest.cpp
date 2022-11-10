@@ -36,6 +36,21 @@ protected:
 
 };
 
+TEST_F(TestWithMemoryLeakDetector, TreeBuildTest) {
+    Tree<int> tree(1);
+    Tree<int>::iterator iterator = tree.begin();
+    EXPECT_NO_THROW(iterator.addRight(2));
+    EXPECT_NO_THROW(iterator.addRight(3));
+    EXPECT_NO_THROW(iterator.addLeft(4));
+    EXPECT_NO_THROW(iterator.addLeft(5));
+    EXPECT_ANY_THROW(iterator--);
+    EXPECT_ANY_THROW(
+            while (true) {
+                iterator++;
+            }
+            );
+}
+
 class BasicTest : public TestWithMemoryLeakDetector {
 protected:
 
@@ -179,14 +194,15 @@ TEST_F(GeneralTest1, DecremetTest2){
 
 TEST_F(GeneralTest1, ForwardAndBackward){
     MemoryLeakDetector leakDetector;
-    Tree<int>::iterator iterator;
     int size = 0;
-    for(iterator = tree.begin(); iterator != tree.end(); ++iterator) {
+    Tree<int>::iterator iterator = tree.begin();
+    for(; iterator != tree.end(); ++iterator) {
         size++;
         EXPECT_EQ(iterator.getValue(), size) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
         if(size >= 15)
             FAIL();
     }
+
     do {
         EXPECT_NO_THROW(--iterator);
         EXPECT_EQ(iterator.getValue(), size) << "iterator node: " << *iterator << " isEnd: " << iterator.isEnd() << std::endl;
@@ -256,8 +272,7 @@ TEST_F(GeneralTest1, PostfixOperatorsTest) {
     int i = 0;
     while(iterator != tree.end()) {
         i++;
-        Tree<int>::iterator postfixIterator;
-        EXPECT_NO_THROW(postfixIterator = iterator++);
+        Tree<int>::iterator postfixIterator = iterator++;
         EXPECT_EQ(*postfixIterator, i);
         if(iterator.isEnd())
             EXPECT_EQ(*iterator, i);
@@ -268,8 +283,7 @@ TEST_F(GeneralTest1, PostfixOperatorsTest) {
     iterator = tree.end();
     EXPECT_EQ(*iterator, i);
     EXPECT_EQ(iterator.isEnd(), true);
-    Tree<int>::iterator postfixIterator;
-    EXPECT_NO_THROW(postfixIterator = iterator--);
+    Tree<int>::iterator postfixIterator = iterator--;
     EXPECT_EQ(*postfixIterator, i);
     EXPECT_EQ(postfixIterator.isEnd(), true);
     EXPECT_EQ(*iterator, i);

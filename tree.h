@@ -8,8 +8,6 @@ public:
     class iterator;
     friend class iterator;
 
-    Tree() {}
-
     ~Tree() {
         clear(tree);
     }
@@ -66,11 +64,6 @@ public:
 
     public:
 
-        iterator() {
-            node = nullptr;
-            end = true;
-        }
-
         explicit iterator(Node* node, bool isEnd = false)  {
             if(isEnd && node != nullptr) {
                 while(node->left != nullptr || node->right != nullptr) {
@@ -95,16 +88,12 @@ public:
         }
 
         T getValue() {
-            if(node == nullptr)
-                throw std::range_error("tree is empty");
             return node->value;
         }
 
         bool next() {
-            if(node == nullptr)
-                throw std::range_error("tree is empty");
             if(end)
-                return !end;
+                return false;
             if(node->left != nullptr) {
                 node = node->left;
                 end = false;
@@ -137,13 +126,12 @@ public:
         }
 
         bool back() {
-            if(node == nullptr)
-                throw std::range_error("tree is empty");
-            if(isEnd()) {
+            if (isEnd()) {
                 end = false;
                 return true;
             }
-            if(node->top == nullptr) {
+
+            if (node->top == nullptr) {
                 while(true) {
                     if(node->right != nullptr) {
                         node = node->right;
@@ -157,6 +145,7 @@ public:
                 }
                 return true;
             }
+
             if(node->top->left == node) {
                 node = node->top;
                 return true;
